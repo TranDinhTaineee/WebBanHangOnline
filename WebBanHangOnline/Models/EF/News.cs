@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebBanHangOnline.DesignPatterns.BehavioralPatterns.State;
 
 namespace WebBanHangOnline.Models.EF
 {
@@ -28,5 +29,16 @@ namespace WebBanHangOnline.Models.EF
         public string SeoKeywords { get; set; }
         public bool IsActive { get; set; }
         public virtual Category Category { get; set; }
+
+        private State state;
+        public void TransitionTo(State state)
+        {
+            this.state = state;
+        }
+        public void Execute()
+        {
+            state.Execute();
+        }
+
     }
 }

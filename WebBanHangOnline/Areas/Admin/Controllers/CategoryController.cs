@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebBanHangOnline.DesignPatterns.Singleton;
 using WebBanHangOnline.Models;
 using WebBanHangOnline.Models.EF;
 
@@ -12,10 +13,15 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
     public class CategoryController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
+        public CategoryController()
+        {
+            Singleton.Instance.Init(db);
+        }
         // GET: Admin/Category
         public ActionResult Index()
         {
-            var items = db.Categories;
+            //var items = db.Categories;
+            var items = Singleton.Instance.listCategory;
             return View(items);
         }
 
@@ -35,6 +41,7 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
                 model.Alias = WebBanHangOnline.Models.Common.Filter.FilterChar(model.Title);
                 db.Categories.Add(model);
                 db.SaveChanges();
+                Singleton.Instance.Update(db);
                 return RedirectToAction("Index");
             }
             return View(model);
@@ -42,8 +49,14 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
 
         public ActionResult Edit(int id)
         {
-            var item = db.Categories.Find(id);
-            return View(item);
+            //var item = db.Categories.Find(id);
+            var items = Singleton.Instance.listCategory;
+            foreach(var item in items)
+            {
+                if(item.Id == id)
+                    return View(item);
+            }
+            return View();
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -65,6 +78,7 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
                 db.Entry(model).Property(x => x.ModifiedDate).IsModified = true;
                 db.Entry(model).Property(x => x.Modifiedby).IsModified = true;
                 db.SaveChanges();
+                Singleton.Instance.Update(db);
                 return RedirectToAction("Index");
             }
             return View(model);
@@ -76,9 +90,9 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
             var item = db.Categories.Find(id);
             if (item != null)
             {
-                //var DeleteItem = db.Categories.Attach(item);
                 db.Categories.Remove(item);
                 db.SaveChanges();
+                Singleton.Instance.Update(db);
                 return Json(new { success = true });
             }
             return Json(new { success = false });

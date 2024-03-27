@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebBanHangOnline.DesignPatterns.BehavioralPatterns.State;
 using WebBanHangOnline.Models;
 using WebBanHangOnline.Models.EF;
 
@@ -44,12 +45,10 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
         {
             if (ModelState.IsValid)
             {
-                model.CreatedDate = DateTime.Now;
-                model.CategoryId = 3;
-                model.ModifiedDate = DateTime.Now;
-                model.Alias = WebBanHangOnline.Models.Common.Filter.FilterChar(model.Title);
-                db.News.Add(model);
-                db.SaveChanges();
+                News news = new News();
+                news.TransitionTo(new AddState(news, db, model));
+                news.Execute();
+
                 return RedirectToAction("Index");
             }
             return View(model);
@@ -67,11 +66,10 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
         {
             if (ModelState.IsValid)
             {
-                model.ModifiedDate = DateTime.Now;
-                model.Alias = WebBanHangOnline.Models.Common.Filter.FilterChar(model.Title);
-                db.News.Attach(model);
-                db.Entry(model).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges();
+                News news = new News();
+                news.TransitionTo(new EditState(news, db, model));
+                news.Execute();
+
                 return RedirectToAction("Index");
             }
             return View(model);
@@ -80,11 +78,13 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
         [HttpPost]
         public ActionResult Delete(int id)
         {
-            var item = db.News.Find(id);
+            News item = db.News.Find(id);
+            News news = new News();
+            news.TransitionTo(new RemoteState(news, db, item));
             if (item != null)
             {
-                db.News.Remove(item);
-                db.SaveChanges();
+                news.Execute();
+
                 return Json(new { success = true });
             }
 

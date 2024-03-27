@@ -2,74 +2,53 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using WebBanHangOnline.DesignPatterns.BehavioralPatterns.Command;
 
 namespace WebBanHangOnline.Models
 {
-    public class ShoppingCart
+    class ShoppingCart
     {
-        public List<ShoppingCartItem> Items { get; set; }
+        public Invoker invoker { get; set; }
+        public Receiver receiver { get; set; }
         public ShoppingCart()
         {
-            this.Items = new List<ShoppingCartItem>();
+            receiver = new Receiver();
         }
 
         public void AddToCart(ShoppingCartItem item,int Quantity)
         {
-            var checkExits = Items.FirstOrDefault(x => x.ProductId == item.ProductId);
-            if (checkExits != null)
-            {
-                checkExits.Quantity += Quantity;
-                checkExits.TotalPrice = checkExits.Price * checkExits.Quantity;
-            }
-            else
-            {
-                Items.Add(item);
-            }
+            ICommand addToCart = new AddToCartCommand(receiver, item, Quantity);
+            invoker = new Invoker(addToCart);
+            invoker.Execute();
         }
 
         public void Remove(int id)
         {
-            var checkExits = Items.SingleOrDefault(x=>x.ProductId==id);
-            if (checkExits != null)
-            {
-                Items.Remove(checkExits);
-            }
+            ICommand remove = new RemoveCommand(receiver, id);
+            invoker = new Invoker(remove);
+            invoker.Execute();
         }
 
         public void UpdateQuantity(int id,int quantity)
         {
-            var checkExits = Items.SingleOrDefault(x => x.ProductId == id);
-            if (checkExits != null)
-            {
-                checkExits.Quantity = quantity;
-                checkExits.TotalPrice = checkExits.Price * checkExits.Quantity;
-            }
+            ICommand updateQuantity = new UpdateQuantityCommand(receiver, id, quantity);
+            invoker = new Invoker(updateQuantity);
+            invoker.Execute();
         }
 
         public decimal GetTotalPrice()
         {
-            return Items.Sum(x=>x.TotalPrice);
+            return receiver.GetTotalPrice();
         }
         public int GetTotalQuantity()
         {
-            return Items.Sum(x => x.Quantity);
+            return receiver.GetTotalQuantity();
         }
         public void ClearCart()
         {
-            Items.Clear();
+            ICommand clearCart = new ClearCartCommand(receiver);
+            invoker = new Invoker(clearCart);
+            invoker.Execute();
         }
-
-    }
-
-    public class ShoppingCartItem
-    {
-        public int ProductId { get; set; }
-        public string ProductName { get; set; }
-        public string Alias { get; set; }
-        public string CategoryName { get; set; }
-        public string ProductImg { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
-        public decimal TotalPrice { get; set; }
     }
 }

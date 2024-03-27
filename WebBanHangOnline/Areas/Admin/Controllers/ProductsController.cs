@@ -4,15 +4,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebBanHangOnline.DesignPatterns.BehavioralPatterns.Strategy;
+using WebBanHangOnline.DesignPatterns.CreationalPatterns.FactoryPattern.FactoryMethod;
+using WebBanHangOnline.DesignPatterns.FactoryPattern.FactoryMethod;
+using WebBanHangOnline.DesignPatterns.StructuralPatterns.Proxy;
 using WebBanHangOnline.Models;
 using WebBanHangOnline.Models.EF;
 
 namespace WebBanHangOnline.Areas.Admin.Controllers
 {
     [Authorize(Roles = "Admin,Employee")]
-    public class ProductsController : Controller
+    public class ProductsController : Controller, IProxy
     {
         private ApplicationDbContext db = new ApplicationDbContext();
+        private Context context;
+
         // GET: Admin/Products
         public ActionResult Index(int? page)
         {
@@ -39,6 +45,7 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Add(Product model, List<string> Images, List<int> rDefault)
         {
+
             if (ModelState.IsValid)
             {
                 if (Images != null && Images.Count > 0)
@@ -82,6 +89,11 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
             return View(model);
         }
 
+        public ActionResult AddProxy(Product model, List<string> Images, List<int> rDefault)
+        {
+            IProxy iProxy = new ProductProxy();
+            return iProxy.Add(model, Images, rDefault);
+        }
 
         public ActionResult Edit(int id)
         {
@@ -94,39 +106,41 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Edit(Product model)
         {
+            IStrategy editStrategy = new EditStrategy(model, db);
+            context = new Context(editStrategy);
             if (ModelState.IsValid)
             {
-                model.ModifiedDate = DateTime.Now;
-                model.Alias = WebBanHangOnline.Models.Common.Filter.FilterChar(model.Title);
-                db.Products.Attach(model);
-                db.Entry(model).State = System.Data.Entity.EntityState.Modified;
-                db.SaveChanges();
+                context.Execute();
                 return RedirectToAction("Index");
             }
             return View(model);
         }
 
+        public ActionResult EditProxy(Product model)
+        {
+            IProxy iProxy = new ProductProxy();
+            return iProxy.Edit(model);
+        }
+
         [HttpPost]
         public ActionResult Delete(int id)
         {
-            var item = db.Products.Find(id);
-            if (item != null)
+            Product product = db.Products.Find(id);
+            IStrategy removeStrategy = new RemoveStrategy(id, db, product);
+            context = new Context(removeStrategy);
+
+            if (product != null)
             {
-                var checkImg = item.ProductImage.Where(x => x.ProductId == item.Id);
-                if (checkImg != null)
-                {
-                    foreach(var img in checkImg)
-                    {
-                        db.ProductImages.Remove(img);
-                        db.SaveChanges();
-                    }
-                }
-                db.Products.Remove(item);
-                db.SaveChanges();
+                context.Execute();
                 return Json(new { success = true });
             }
-
             return Json(new { success = false });
+        }
+
+        public ActionResult DeleteProxy(int id)
+        {
+            IProxy iProxy = new ProductProxy();
+            return iProxy.Delete(id);
         }
 
         [HttpPost]
@@ -171,6 +185,42 @@ namespace WebBanHangOnline.Areas.Admin.Controllers
             }
 
             return Json(new { success = false });
+        }
+
+        public ActionResult Duplicate(int id)
+        {
+            ViewBag.ProductCategory = new SelectList(db.ProductCategories.ToList(), "Id", "Title");
+            var item = db.Products.Find(id);
+            return View(item);
+        }
+
+        [HttpPost]
+        public ActionResult Duplicate(Product model, int id)
+        {
+            Product product = db.Products.Find(id);
+            IStrategy duplicateStrategy = new DuplicateStrategy(model, db, id, product);
+            context = new Context(duplicateStrategy);
+
+            if (product != null)
+            {
+                context.Execute();
+                return RedirectToAction("Index");
+            }
+            return View(model);
+        }
+        public ActionResult RandomProduct()
+        {
+            ViewBag.ProductCategory = new SelectList(db.ProductCategories.ToList(), "Id", "Title");
+            return View();
+        }
+        [HttpPost]
+        public ActionResult RandomProduct(Product model)
+        {
+            IProductFactory pFactory = new RandomFactory(model, db);
+            Product p = pFactory.CreateProduct();
+            if(p != null)
+                return RedirectToAction("Index");
+            return View(model);
         }
     }
 }

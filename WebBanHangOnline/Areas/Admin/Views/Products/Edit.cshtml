@@ -53,7 +53,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-12">
-                    @using (Html.BeginForm("Edit", "Products", FormMethod.Post, new { }))
+                    @using (Html.BeginForm("EditProxy", "Products", FormMethod.Post, new { }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.ValidationSummary(true)
@@ -248,8 +248,6 @@
                 customConfig: '/content/ckeditor/config.js',
                 extraAllowedContent: 'span',
             });
-
-       
         });
      
     </script>

@@ -1,5 +1,9 @@
-﻿using Microsoft.Owin;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Owin;
 using Owin;
+using WebBanHangOnline.Areas.Admin.Controllers;
+
 
 [assembly: OwinStartupAttribute(typeof(WebBanHangOnline.Startup))]
 namespace WebBanHangOnline

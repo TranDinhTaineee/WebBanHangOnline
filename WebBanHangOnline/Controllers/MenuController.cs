@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using WebBanHangOnline.DesignPatterns.Singleton;
 using WebBanHangOnline.Models;
 
 namespace WebBanHangOnline.Controllers
@@ -10,6 +11,11 @@ namespace WebBanHangOnline.Controllers
     public class MenuController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
+
+        public MenuController()
+        {
+            Singleton.Instance.Init(db);
+        }
         // GET: Menu
         public ActionResult Index()
         {
@@ -18,7 +24,8 @@ namespace WebBanHangOnline.Controllers
 
         public ActionResult MenuTop()
         {
-            var items = db.Categories.OrderBy(x=>x.Position).ToList();
+            //var items = db.Categories.OrderBy(x=>x.Position).ToList();
+            var items = Singleton.Instance.listCategory;
             return PartialView("_MenuTop", items);
         }
 
@@ -42,6 +49,5 @@ namespace WebBanHangOnline.Controllers
             var items = db.ProductCategories.ToList();
             return PartialView("_MenuArrivals", items);
         }
-
     }
 }
